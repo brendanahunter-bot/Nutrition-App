@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Macro and Calorie Tracker</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#6b7280;--ac:#0a7cff;--p:#e8590c;--c:#2f9e44;--f:#f59f00;--bad:#dc2626;--bd:#e5e7eb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111418;--card:#1b2026;--tx:#eceff3;--mu:#98a2b3;--ac:#4aa3ff;--p:#ff8c42;--c:#51cf66;--f:#fcc419;--bad:#f87171;--bd:#2c333b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111418;--card:#1b2026;--tx:#eceff3;--mu:#98a2b3;--ac:#4aa3ff;--p:#ff8c42;--c:#51cf66;--f:#fcc419;--bad:#f87171;--bd:#2c333b;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 12px}h2{font-size:15px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center;margin-top:8px}.row:first-child{margin-top:0}
+.row>*{flex:1;min-width:0}
+input,button{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px}
+button{cursor:pointer;flex:0 0 auto}button.p{background:var(--ac);color:#fff;border-color:var(--ac)}button:disabled{opacity:.5}
+.mu{color:var(--mu);font-size:13px}.m{margin-top:10px}
+.h{display:flex;justify-content:space-between;font-size:14px}
+.bar{height:9px;background:var(--bd);border-radius:6px;overflow:hidden;margin-top:4px}.bar i{display:block;height:100%}
+.lab{font-size:11px;color:var(--mu);display:block;margin-bottom:2px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.st{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;margin-top:12px}.st b{display:block;font-size:22px}
+ul{list-style:none;margin:8px 0 0;padding:0}
+li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--bd)}
+li small{display:block;color:var(--mu)}li button{padding:2px 9px;color:var(--mu)}
+video{width:100%;border-radius:10px;background:#000;display:none;margin-top:8px;max-height:240px;object-fit:cover}
+.seg button{flex:1;font-size:14px;padding:8px 4px}.seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+</style>
+</head>
+<body>
+<main>
+<h1>Macro and Calorie Tracker</h1>
+
+<div class="card">
+  <div class="row"><input type="date" id="date"><button id="tgtbtn">Targets</button></div>
+  <div id="tg" style="display:none"><div class="g4 m">
+    <div><span class="lab">kcal</span><input id="t0" type="number" inputmode="numeric"></div>
+    <div><span class="lab">Protein g</span><input id="t1" type="number" inputmode="numeric"></div>
+    <div><span class="lab">Carbs g</span><input id="t2" type="number" inputmode="numeric"></div>
+    <div><span class="lab">Fat g</span><input id="t3" type="number" inputmode="numeric"></div></div></div>
+  <div class="st"><div><b id="eaten">0</b><span class="mu">Eaten</span></div><div><b id="burned">0</b><span class="mu">Burned</span></div><div><b id="net">0</b><span class="mu">Net</span></div></div>
+  <div class="mu" id="kleft" style="text-align:center;margin-top:4px"></div>
+  <div id="bars"></div>
+</div>
+
+<div class="card">
+  <h2>Add food</h2>
+  <div class="row"><input id="bc" inputmode="numeric" placeholder="Barcode number"><button class="p" id="scan">Scan barcode</button></div>
+  <video id="vid" playsinline muted></video>
+  <div id="ai" style="display:none">
+    <div class="row seg" id="seg"><button data-m="label" class="on">Nutrition label</button><button data-m="recipe">Recipe</button><button data-m="meal">Meal</button></div>
+    <div class="row"><button id="cam">Take photo</button><button id="up">Choose photo</button><button id="stop" style="display:none">Stop</button></div>
+    <input type="file" id="f1" accept="image/*" capture="environment" hidden><input type="file" id="f2" accept="image/*" hidden>
+  </div>
+  <div class="mu m" id="msg">Scan a barcode to look it up, or enter a food below.</div>
+  <div class="row"><input id="pn" placeholder="Food name"></div>
+  <div class="g4 m">
+    <div><span class="lab">kcal</span><input id="k" type="number" inputmode="decimal"></div>
+    <div><span class="lab">Protein g</span><input id="p" type="number" inputmode="decimal"></div>
+    <div><span class="lab">Carbs g</span><input id="c" type="number" inputmode="decimal"></div>
+    <div><span class="lab">Fat g</span><input id="f" type="number" inputmode="decimal"></div>
+  </div>
+  <div class="mu" id="base" style="margin-top:4px">Values are per serving.</div>
+  <div class="row"><div><span class="lab">Servings eaten</span><input id="sv" type="number" step="0.25" value="1" inputmode="decimal"></div><label class="mu" style="flex:1.4"><input type="checkbox" id="rem" checked style="width:auto"> Remember this food</label><button class="p" id="add">Add</button></div>
+</div>
+
+<div class="card">
+  <h2>Calories burned</h2>
+  <div class="row"><input id="bn" placeholder="Activity / Garmin total"><input id="bk" type="number" inputmode="numeric" placeholder="kcal" style="max-width:90px"><button class="p" id="addb">Add</button></div>
+  <ul id="burns"></ul>
+  <div class="mu m">Import a Garmin Connect CSV export (activities or daily stats; needs Date and Calories columns). Re-importing a day replaces its earlier Garmin rows.</div>
+  <div class="row"><input type="file" id="csv" accept=".csv,text/csv"></div>
+  <div class="mu" id="imsg" style="margin-top:6px"></div>
+</div>
+
+<div class="card"><h2>Eaten today</h2><ul id="log"></ul><div class="mu" id="empty">Nothing logged yet.</div></div>
+<div class="card"><h2>Saved foods</h2><ul id="saved"></ul><div class="mu" id="semp">Remembered foods appear here for one-tap adding.</div></div>
+<div class="card mu">Barcode data comes from Open Food Facts, a community database, so check values against the pack. Photo readings are estimates by Claude. Data stays in this browser.</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script>
+const K='macro-garmin-v1';
+let S={t:[2200,150,220,70],days:{},burn:{},saved:[]};
+try{const r=localStorage.getItem(K);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const $=id=>document.getElementById(id);
+const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const r1=n=>Math.round(n*10)/10;
+const D=()=>$('date').value;
+const foods=()=>S.days[D()]||[],burns=()=>S.burn[D()]||[];
+$('date').value=iso(new Date());
+let curBc='';
+const NM=['Protein','Carbs','Fat'],CL=['--p','--c','--f'];
+
+function render(){
+  const L=foods(),B=burns(),t=[0,0,0,0];
+  L.forEach(e=>{t[0]+=e.k;t[1]+=e.p;t[2]+=e.c;t[3]+=e.f});
+  const bk=B.reduce((a,x)=>a+x.k,0);
+  [0,1,2,3].forEach(i=>$('t'+i).value=S.t[i]);
+  $('eaten').textContent=Math.round(t[0]);$('burned').textContent=Math.round(bk);$('net').textContent=Math.round(t[0]-bk);
+  const left=S.t[0]-t[0];
+  $('kleft').textContent=left>=0?Math.round(left)+' kcal left of target':Math.round(-left)+' kcal over target';
+  $('bars').innerHTML=[1,2,3].map(i=>{const v=t[i],g=S.t[i];return `<div class="m"><div class="h"><span>${NM[i-1]}</span><span>${r1(v)} / ${g} g</span></div><div class="bar"><i style="width:${g?Math.min(100,v/g*100):0}%;background:var(${v>g*1.1?'--bad':CL[i-1]})"></i></div></div>`}).join('');
+  $('log').innerHTML=L.map((e,i)=>`<li><span>${esc(e.n)}<small>P ${r1(e.p)} · C ${r1(e.c)} · F ${r1(e.f)}</small></span><span>${Math.round(e.k)}<button data-d="${i}" aria-label="Remove">×</button></span></li>`).join('');
+  $('empty').style.display=L.length?'none':'block';
+  $('burns').innerHTML=B.map((e,i)=>`<li><span>${esc(e.n)}${e.g?' <span class="mu">· Garmin</span>':''}</span><span>${Math.round(e.k)}<button data-b="${i}" aria-label="Remove">×</button></span></li>`).join('');
+  $('saved').innerHTML=S.saved.map((e,i)=>`<li><span>${esc(e.n)}<small>${Math.round(e.k)} kcal · P ${r1(e.p)} · C ${r1(e.c)} · F ${r1(e.f)}</small></span><span><button data-u="${i}" class="p">Use</button><button data-s="${i}" aria-label="Delete">×</button></span></li>`).join('');
+  $('semp').style.display=S.saved.length?'none':'block';
+}
+$('date').onchange=render;
+$('tgtbtn').onclick=()=>{const t=$('tg');t.style.display=t.style.display=='none'?'block':'none'};
+[0,1,2,3].forEach(i=>$('t'+i).onchange=()=>{S.t[i]=Math.max(0,+$('t'+i).value||0);save();render()});
+document.body.addEventListener('click',ev=>{
+  const d=ev.target.dataset;if(!d)return;
+  if(d.d!==undefined){foods().splice(+d.d,1);save();render()}
+  else if(d.b!==undefined){burns().splice(+d.b,1);save();render()}
+  else if(d.s!==undefined){S.saved.splice(+d.s,1);save();render()}
+  else if(d.u!==undefined){const o=S.saved[+d.u];fill(o);curBc=o.bc||'';$('base').textContent='Values are per serving.';$('msg').textContent='Loaded. Set servings and tap Add.';window.scrollTo({top:0,behavior:'smooth'})}
+});
+function fill(o){$('pn').value=o.n||'';$('k').value=o.k??'';$('p').value=o.p??'';$('c').value=o.c??'';$('f').value=o.f??''}
+
+$('add').onclick=()=>{
+  const sv=+$('sv').value||1,k=+$('k').value,p=+$('p').value||0,c=+$('c').value||0,f=+$('f').value||0,n=$('pn').value.trim()||'Food';
+  if(!k&&!p&&!c&&!f){$('msg').textContent='Enter some values first.';return}
+  const kk=k||Math.round(p*4+c*4+f*9);
+  (S.days[D()]=S.days[D()]||[]).push({n:sv!==1?n+' ×'+sv:n,k:kk*sv,p:p*sv,c:c*sv,f:f*sv});
+  const bc=curBc||$('bc').value.replace(/\D/g,'');
+  if($('rem').checked){const i=S.saved.findIndex(x=>(bc&&x.bc===bc)||x.n.toLowerCase()===n.toLowerCase());const o={n,k:kk,p,c,f,bc:bc||undefined};if(i>=0)S.saved[i]=o;else S.saved.push(o)}
+  fill({});$('bc').value='';$('sv').value=1;curBc='';$('base').textContent='Values are per serving.';$('msg').textContent='Added.';save();render();
+};
+$('addb').onclick=()=>{const k=Math.round(+$('bk').value);if(!k)return;(S.burn[D()]=S.burn[D()]||[]).push({n:$('bn').value.trim()||'Activity',k});$('bn').value=$('bk').value='';save();render()};
+
+/* Open Food Facts */
+async function off(code){
+  const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,brands,serving_size,nutriments');
+  const j=await r.json();
+  if(j.status!==1||!j.product)return null;
+  const p=j.product,n=p.nutriments||{},sv=n['energy-kcal_serving']!=null||n['energy-kj_serving']!=null,u=sv?'_serving':'_100g';
+  let k=n['energy-kcal'+u];if(k==null&&n['energy-kj'+u]!=null)k=n['energy-kj'+u]/4.184;
+  return{n:[p.brands&&p.brands.split(',')[0],p.product_name].filter(Boolean).join(' – '),k:Math.round(k||0),p:r1(n['proteins'+u]||0),c:r1(n['carbohydrates'+u]||0),f:r1(n['fat'+u]||0),base:sv?(p.serving_size||'1 serving'):'100 g'};
+}
+async function gotCode(code){
+  code=code.replace(/\D/g,'');if(!code)return;
+  $('bc').value=code;stopScan();curBc=code;
+  const s=S.saved.find(x=>x.bc===code);
+  if(s){fill(s);$('base').textContent='Values are per serving.';$('msg').textContent='Found in your saved foods. Set servings and tap Add.';return}
+  $('msg').textContent='Looking up Open Food Facts…';
+  try{
+    const o=await off(code);
+    if(!o){fill({});$('msg').textContent='Not found in Open Food Facts. Enter the values from the pack'+(canAI()?', or photograph the label.':'.');return}
+    fill(o);
+    $('base').textContent='Values are per '+o.base+(o.base==='100 g'?'. Enter servings as grams ÷ 100 (150 g = 1.5).':'.');
+    $('msg').textContent=(o.k||o.p||o.c||o.f)?'Found on Open Food Facts. Check against the pack, set servings, then tap Add.':'Found, but it has no nutrition data. Enter the values from the pack.';
+  }catch(e){
+    fill({});
+    $('msg').textContent='Open Food Facts can’t be reached from this view (it is blocked inside Claude pages). Open the downloaded copy of this app in your browser for live lookups, or enter the values yourself'+(canAI()?' or photograph the label.':'.');
+  }
+}
+let stream=null,zr=null,loop=0;
+function stopScan(){clearInterval(loop);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}if(zr){try{zr.reset()}catch(e){}zr=null}$('vid').style.display='none';$('scan').textContent='Scan barcode'}
+async function startScan(){
+  if(stream||zr){stopScan();return}
+  const v=$('vid');
+  try{
+    if('BarcodeDetector' in window){
+      const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      v.srcObject=stream;v.style.display='block';await v.play();$('scan').textContent='Stop';
+      loop=setInterval(async()=>{try{const r=await det.detect(v);if(r.length)gotCode(r[0].rawValue)}catch(e){}},300);
+    }else if(window.ZXing){
+      v.style.display='block';$('scan').textContent='Stop';
+      zr=new ZXing.BrowserMultiFormatReader();
+      zr.decodeFromVideoDevice(undefined,v,res=>{if(res)gotCode(res.getText())});
+    }else throw 0;
+  }catch(e){stopScan();$('msg').textContent='Camera scanning isn’t available here. Type the barcode number instead.'}
+}
+$('scan').onclick=startScan;
+$('bc').onchange=()=>gotCode($('bc').value);
+
+/* Photos via Claude (only where available) */
+let sample=null,mode='label',ctl=null;
+const canAI=()=>$('ai').style.display!=='none';
+(async()=>{try{if(!window.claude)return;sample=await claude.use('sample');if(!sample)return;const l=await sample.limits().catch(()=>null);if(l&&l.images)$('ai').style.display='block'}catch(e){}})();
+$('seg').onclick=ev=>{const m=ev.target.dataset.m;if(!m)return;mode=m;[...$('seg').children].forEach(b=>b.classList.toggle('on',b.dataset.m===m))};
+$('cam').onclick=()=>$('f1').click();$('up').onclick=()=>$('f2').click();$('stop').onclick=()=>ctl&&ctl.abort();
+$('f1').onchange=$('f2').onchange=ev=>{const f=ev.target.files[0];ev.target.value='';if(f)readPhoto(f)};
+async function shrink(file){try{const bm=await createImageBitmap(file),s=Math.min(1,1280/Math.max(bm.width,bm.height)),c=document.createElement('canvas');c.width=Math.round(bm.width*s);c.height=Math.round(bm.height*s);c.getContext('2d').drawImage(bm,0,0,c.width,c.height);return await new Promise(r=>c.toBlob(b=>r(b||file),'image/jpeg',.85))}catch(e){return file}}
+const FMT='Reply with only a JSON object: {"name": string, "kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number, "note": string}. All numbers are per ONE serving. "note" is one short sentence on the serving size or assumptions. If the image doesn’t show food or a food label, return {"error":"short reason"}.';
+const PR={label:'This is a photo of a nutrition information panel. Read the values per serving; if only per-100g values are shown use those and say so in the note. Convert kJ to kcal (kJ ÷ 4.184). Use the product name if visible. '+FMT,
+recipe:'This is a photo of a recipe (page, screenshot or finished dish). Identify ingredients and quantities, estimate total calories and macros, then divide by the stated number of servings (assume a sensible number and say so if none is stated). Use the recipe title as the name. '+FMT,
+meal:'This is a photo of a meal. Identify the foods, estimate the portions shown, and give macros for the whole plate as one serving. State your assumptions in the note. '+FMT};
+async function readPhoto(file){
+  if(!sample)return;ctl=new AbortController();
+  $('stop').style.display='block';$('cam').disabled=$('up').disabled=true;$('msg').textContent='Reading photo…';
+  try{
+    const d=await sample.json(PR[mode],{images:[await shrink(file)],signal:ctl.signal,modelTier:'default'});
+    if(d.error){$('msg').textContent='Couldn’t read that: '+d.error;return}
+    fill({n:d.name||'',k:Math.round(+d.kcal||0),p:r1(+d.protein_g||0),c:r1(+d.carbs_g||0),f:r1(+d.fat_g||0)});
+    $('base').textContent='Values are per serving.';
+    $('msg').textContent='Estimate: '+(d.note||'')+' Check the values, set servings, then tap Add.';
+  }catch(e){
+    const m={cancelled:'',not_granted:'Photo reading wasn’t allowed for this page.',rate_limited:'Usage limit reached. Try again later.',image_rejected:'That image couldn’t be used. Try another.',invalid_json:'Couldn’t make sense of that photo. Try a clearer one.',refused:'That photo couldn’t be read. Try a different one.'}[e&&e.code];
+    $('msg').textContent=m===undefined?'Something went wrong reading the photo.':m;
+    if(e&&e.code==='not_granted')$('ai').style.display='none';
+  }finally{$('stop').style.display='none';$('cam').disabled=$('up').disabled=false;ctl=null}
+}
+
+/* Garmin CSV */
+function parseCSV(txt){const rows=[];let r=[],f='',q=false;for(let i=0;i<txt.length;i++){const c=txt[i];if(q){if(c=='"'){if(txt[i+1]=='"'){f+='"';i++}else q=false}else f+=c}else if(c=='"')q=true;else if(c==','){r.push(f);f=''}else if(c=='\n'||c=='\r'){if(c=='\r'&&txt[i+1]=='\n')i++;r.push(f);rows.push(r);r=[];f=''}else f+=c}if(f||r.length){r.push(f);rows.push(r)}return rows.filter(x=>x.some(y=>y.trim()))}
+$('csv').onchange=async ev=>{
+  const file=ev.target.files[0];if(!file)return;
+  try{
+    const rows=parseCSV((await file.text()).replace(/^\uFEFF/,'')),h=rows[0].map(x=>x.trim().toLowerCase());
+    const di=h.findIndex(x=>/date|day/.test(x));
+    let ci=h.findIndex(x=>['calories','total calories','active calories','calories burned'].includes(x));if(ci<0)ci=h.findIndex(x=>x.includes('calories'));
+    const ti=h.findIndex(x=>/^(activity type|title|activity name)$/.test(x));
+    if(di<0||ci<0){$('imsg').textContent='Couldn’t find Date and Calories columns.';return}
+    const add=[],ds=new Set();
+    for(const r of rows.slice(1)){const k=Math.round(parseFloat((r[ci]||'').replace(/[^\d.]/g,''))),dt=new Date((r[di]||'').trim().replace(' ','T'));if(!k||isNaN(dt))continue;const key=iso(dt);ds.add(key);add.push([key,{n:ti>=0&&r[ti]?r[ti]:'Garmin activity',k,g:1}])}
+    ds.forEach(k=>{S.burn[k]=(S.burn[k]||[]).filter(x=>!x.g)});
+    add.forEach(([k,x])=>(S.burn[k]=S.burn[k]||[]).push(x));
+    save();render();$('imsg').textContent='Imported '+add.length+' rows across '+ds.size+' days.';
+  }catch(e){$('imsg').textContent='Couldn’t read that file.'}
+  ev.target.value='';
+};
+render();
+</script>
+</body>
+</html>
